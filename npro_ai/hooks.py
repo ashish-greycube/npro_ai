@@ -48,6 +48,11 @@ app_license = "mit"
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+doctype_js = {
+    "Job Opening": "public/js/job_opening.js",
+    "Job Applicant": "public/js/job_applicant.js"
+}
+
 # Svg Icons
 # ------------------
 # include app icons in desk
@@ -90,6 +95,8 @@ app_license = "mit"
 
 # before_uninstall = "npro_ai.uninstall.before_uninstall"
 # after_uninstall = "npro_ai.uninstall.after_uninstall"
+
+after_migrate = "npro_ai.migrate.after_migrate"
 
 # Integration Setup
 # ------------------

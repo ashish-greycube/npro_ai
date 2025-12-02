@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-28 10:47:57.847596",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_break_mbuy",
+  "ai_provider",
+  "job_opening_section",
+  "generate_jrss_prompt",
+  "get_technical_questions_prompt",
+  "generate_boolean_prompt",
+  "generate_screening_questions_prompt",
+  "section_break_mvwl",
+  "analyse_cv",
+  "evaluate_candidate"
+ ],
+ "fields": [
+  {
+   "fieldname": "generate_jrss_prompt",
+   "fieldtype": "Small Text",
+   "label": "Generate JRSS Prompt"
+  },
+  {
+   "fieldname": "get_technical_questions_prompt",
+   "fieldtype": "Small Text",
+   "label": "Get Technical Questions Prompt"
+  },
+  {
+   "fieldname": "generate_boolean_prompt",
+   "fieldtype": "Small Text",
+   "label": "Generate Boolean Prompt"
+  },
+  {
+   "fieldname": "generate_screening_questions_prompt",
+   "fieldtype": "Small Text",
+   "label": "Generate Screening Questions Prompt"
+  },
+  {
+   "fieldname": "analyse_cv",
+   "fieldtype": "Small Text",
+   "label": "Analyse CV"
+  },
+  {
+   "fieldname": "evaluate_candidate",
+   "fieldtype": "Small Text",
+   "label": "Evaluate Candidate"
+  },
+  {
+   "fieldname": "tab_break_mbuy",
+   "fieldtype": "Tab Break"
+  },
+  {
+   "fieldname": "section_break_mvwl",
+   "fieldtype": "Section Break",
+   "label": "Job Applicant"
+  },
+  {
+   "fieldname": "job_opening_section",
+   "fieldtype": "Section Break",
+   "label": "Job Opening"
+  },
+  {
+   "default": "OpenAI",
+   "fieldname": "ai_provider",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "AI Provider",
+   "options": "OpenAI\nGoogle",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-12-02 10:26:03.781045",
+ "modified_by": "Administrator",
+ "module": "Npro Ai",
+ "name": "Npro AI Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

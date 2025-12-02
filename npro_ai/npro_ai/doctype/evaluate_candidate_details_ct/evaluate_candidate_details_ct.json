@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-01 13:51:26.643153",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "screening_call_transcript",
+  "evaluate_candidate",
+  "print"
+ ],
+ "fields": [
+  {
+   "fieldname": "screening_call_transcript",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Screening Call Transcript"
+  },
+  {
+   "fieldname": "evaluate_candidate",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Evaluate Candidate"
+  },
+  {
+   "fieldname": "print",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Print"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-12-02 08:53:52.599153",
+ "modified_by": "Administrator",
+ "module": "Npro Ai",
+ "name": "Evaluate Candidate Details CT",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
