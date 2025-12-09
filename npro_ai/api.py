@@ -371,7 +371,11 @@ def fill_cv_analysation(docname, session_id):
 	response, _ = session.interact(ai_prompt, stream=False)
 	if response:
 		response_content = response['content'][0]['text']
-		job_applicant.custom_analyse_cv = response_content
+		cleaned_str = (
+				response_content.replace("```html", "")
+				.replace("```", "")
+			)
+		job_applicant.custom_analyse_cv = cleaned_str
 		job_applicant.custom_session_id = session_id
 		job_applicant.save()
 		return "Analyse CV Generated"
@@ -423,7 +427,11 @@ def fill_evaluate_candidate(session_id, row_name):
 	response, _ = session.interact(ai_prompt, stream=False)
 	if response:
 		response_content = response['content'][0]['text']
-		frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", response_content)
+		cleaned_str = (
+				response_content.replace("```html", "")
+				.replace("```", "")
+			)
+		frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", cleaned_str)
 		# row.evaluate_candidate = response_content
 		return "Evaluate Candidate Generated"
 	
