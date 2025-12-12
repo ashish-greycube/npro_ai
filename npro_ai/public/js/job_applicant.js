@@ -115,10 +115,10 @@ frappe.ui.form.on("Evaluate Candidate Details CT", {
 
 let analyse_cv_dialog = function (frm) {
 
-    if (frm.doc.custom_analyse_cv && frm.doc.custom_analyse_cv != '<div class="ql-editor read-mode"><p><br></p></div>') {
-        frm.scroll_to_field("custom_analyse_cv")
-    }
-    else {
+    // if (frm.doc.custom_analyse_cv && frm.doc.custom_analyse_cv != '<div class="ql-editor read-mode"><p><br></p></div>') {
+    //     frm.scroll_to_field("custom_analyse_cv")
+    // }
+    // else {
         let analyse_cv_prompt = ""
         frappe.db.get_single_value("Npro AI Settings", "analyse_cv")
             .then(analyse_cv => {
@@ -188,7 +188,7 @@ let analyse_cv_dialog = function (frm) {
                                         "session_id": values.session_id
                                     },
                                     freeze: true,
-                                    freeze_message: __("Adding CV Analsation..."),
+                                    freeze_message: __("Adding CV Analysis..."),
                                     callback: function (r) {
                                         if (r.message) {
                                             frappe.show_alert(__('Analyse CV For Candidate are Generated and Added to the Job Applicant Successfully.'), 5);
@@ -207,7 +207,7 @@ let analyse_cv_dialog = function (frm) {
                     frappe.throw(__("Please Set Analyse CV Prompt In Npro AI Settings Doc"))
                 }
             })
-    }
+    // }
 }
 
 let ask_to_analyse_cv = function (dialog, id) {
@@ -329,7 +329,7 @@ let evaluate_candidate_dialog = function(frm, row){
                                         "row_name": row.name
                                     },
                                     freeze: true,
-                                    freeze_message: __("Adding Evaluate Candidate Details..."),
+                                    freeze_message: __("Adding Candidate Evaluation..."),
                                     callback: function (r) {
                                         if (r.message) {
                                             // console.log(r.message, "=========r.message========")

@@ -28,7 +28,7 @@ def fill_prompt_if_empty_in_settings():
         print("---Add Analyse CV Prompt---")
 
     if not ai_doc.evaluate_candidate or ai_doc.evaluate_candidate == "":
-        ai_doc.evaluate_candidate = "Based on the candidate’s CV and screening call transcript, evaluate the candidate. Include a section on their Pros (as per CV), Cons (as per CV), Screening Q&A (list down the question, summary of answer, and analysis of answer), and Recommendation"
+        ai_doc.evaluate_candidate = "Based on the candidate’s screening call transcript, evaluate the candidate. Include a section on their Pros, Cons, Screening Q&A (list down the question asked, summary of answer, and analysis of answer), and Overall Recommendation"
         print("---Add Evaluate Candidates Prompt---")
 
     ai_doc.save(ignore_permissions=True)

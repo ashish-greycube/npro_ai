@@ -54,9 +54,9 @@ let generate_jrss_from_uploaded_job_description = function (frm) {
   if (!frm.doc.custom_upload_jd) {
     frappe.throw(__("Please upload Job Description first."));
   }
-  else if (frm.doc.custom_session_id) {
-    frm.scroll_to_field("custom_jrss_mandatory_skills")
-  }
+  // else if (frm.doc.custom_session_id) {
+  //   frm.scroll_to_field("custom_jrss_mandatory_skills")
+  // }
   else {
     generate_jrss_dialog(frm);
   }
@@ -191,10 +191,10 @@ function ask_to_generate_jrss(dialog, id) {
 // -------------------- Generate Technical Questions --------------------
 let generate_technical_questions_dialog = function (frm) {
 
-  if (frm.doc.custom_technical_questions && frm.doc.custom_technical_questions != '<div class="ql-editor read-mode"><p><br></p></div>') {
-    frm.scroll_to_field("custom_technical_questions")
-  }
-  else {
+  // if (frm.doc.custom_technical_questions && frm.doc.custom_technical_questions != '<div class="ql-editor read-mode"><p><br></p></div>') {
+  //   frm.scroll_to_field("custom_technical_questions")
+  // }
+  // else {
 
     let technical_que_prompt = ""
     frappe.db.get_single_value("Npro AI Settings", "get_technical_questions_prompt")
@@ -280,7 +280,7 @@ let generate_technical_questions_dialog = function (frm) {
           frappe.throw(__("Please Set Generate Technical Questions Prompt In Npro AI Settings Doc"))
         }
       })
-  }
+  // }
 }
 
 let ask_to_generate_technical_que = function (dialog, id) {
@@ -314,10 +314,10 @@ let ask_to_generate_technical_que = function (dialog, id) {
 // -------------------- Generate Boolean For Candidate Search --------------------
 
 let generate_booleans_dialog = function (frm) {
-  if (frm.doc.custom_candidate_boolean && frm.doc.custom_candidate_boolean != "") {
-    frm.scroll_to_field("custom_candidate_boolean")
-  }
-  else {
+  // if (frm.doc.custom_candidate_boolean && frm.doc.custom_candidate_boolean != "") {
+  //   frm.scroll_to_field("custom_candidate_boolean")
+  // }
+  // else {
 
     let boolean_prompt = ""
     frappe.db.get_single_value("Npro AI Settings", "generate_boolean_prompt")
@@ -405,7 +405,7 @@ let generate_booleans_dialog = function (frm) {
         }
       })
 
-  }
+  // }
 }
 
 let ask_to_generate_boolean = function (dialog, id) {
@@ -440,10 +440,10 @@ let ask_to_generate_boolean = function (dialog, id) {
 // -------------------- Generate Screening Question For Candidate Search --------------------
 
 let generate_screening_question_dailog = function (frm) {
-  if (frm.doc.custom_screening_questions && frm.doc.custom_screening_questions != "") {
-    frm.scroll_to_field("custom_screening_questions")
-  }
-  else {
+  // if (frm.doc.custom_screening_questions && frm.doc.custom_screening_questions != "") {
+  //   frm.scroll_to_field("custom_screening_questions")
+  // }
+  // else {
 
     let screening_question_prompt = ""
     frappe.db.get_single_value("Npro AI Settings", "generate_screening_questions_prompt")
@@ -531,7 +531,7 @@ let generate_screening_question_dailog = function (frm) {
         }
       })
 
-  }
+  // }
 }
 
 let ask_to_generate_screening_question = function (dialog, id) {
