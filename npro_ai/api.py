@@ -390,7 +390,8 @@ def evaluate_cv(screening_call_transcript, evaluate_candidate_prompt, additional
 
 	session = otto.load(session_id)
 	model = otto.get_model(size="Small", provider=ai_provider)
-	respose_format = """Format: Create an HTML table with EXACTLY the following 4 columns: 1. Criteria (JRSS Skill, Technical Questions, JD Title Discrepancy),  2. JD (jd_name) / JRSS / Technical Questions  3. Candidate CV Details  4. Evaluation (In less then 100 characters, (background-color for Evaluation column only)), not add extra text in header"""
+	# respose_format = """Format: Create an HTML table with EXACTLY the following 4 columns: 1. Criteria (JRSS Skill, Technical Questions, JD Title Discrepancy),  2. JD (jd_name) / JRSS / Technical Questions  3. Candidate CV Details  4. Evaluation (In less then 100 characters, (background-color for Evaluation column only)), not add extra text in header"""
+	respose_format = """Format: Create an HTML table with EXACTLY the following 2 columns header: 1. Section,  2. Details, do not add extra text in header"""
 
 	ai_prompt = evaluate_candidate_prompt + "\n" + additional_instructions + "\n" + " and do not give extra details which are not asked.(Refer Previously Attached CV)." + respose_format + "Give output in HTML Format."
 
@@ -426,7 +427,7 @@ def evaluate_cv(screening_call_transcript, evaluate_candidate_prompt, additional
 @frappe.whitelist()
 def fill_evaluate_candidate(session_id, row_name):
 	session = otto.load(session_id)
-	ai_prompt = """Give me Last generated Evaluation of CV in HTML"""
+	ai_prompt = """Give me Latest generated Evaluation of CV in HTML"""
 	response, _ = session.interact(ai_prompt, stream=False)
 	if response:
 		response_content = response['content'][0]['text']
