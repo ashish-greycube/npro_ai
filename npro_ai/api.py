@@ -134,7 +134,7 @@ def generate_technical_questions_from_jrss(technical_question_prompt, additional
 	session = otto.load(session_id)
 
 	model = otto.get_model(size="Small", provider=ai_provider)
-	ai_prompt = technical_question_prompt + "\n" + additional_instructions + "\n" + "give me output in HTML Formatand do not give extra details which are not asked."
+	ai_prompt = technical_question_prompt + "\n" + additional_instructions + "\n" + "give me output in HTML Order List Format and do not give extra details which are not asked."
 	stream = session.interact(ai_prompt, stream=True)
 
 	try:
@@ -164,25 +164,25 @@ def generate_technical_questions_from_jrss(technical_question_prompt, additional
 	}
 
 @frappe.whitelist()
-def fill_technical_questions(docname):
+def fill_technical_questions(docname, ai_response):
 	job_opeing = frappe.get_doc("Job Opening", docname)
-	session_id = job_opeing.custom_session_id
+	# session_id = job_opeing.custom_session_id
 
-	session = otto.load(session_id)
-	ai_prompt = """Give me Last Generated technical questions only(no headings or other details) in HTML Format.
-					Example: <ol><li>Question 1?</li><li>Question 2?</li></ol>
-				"""
-	response, _ = session.interact(ai_prompt, stream=False)
-	if response:
-		response_content = response['content'][0]['text']
-		tech_que = (
-				response_content.replace("```json", "")
-				.replace("```", "")
-				.strip()
-			)
-		job_opeing.custom_technical_questions = tech_que
-		job_opeing.save()
-		return "Technical Questions Updated Successfully"
+	# session = otto.load(session_id)
+	# ai_prompt = """Give me Last Generated technical questions only(no headings or other details) in HTML Format.
+	# 				Example: <ol><li>Question 1?</li><li>Question 2?</li></ol>
+	# 			"""
+	# response, _ = session.interact(ai_prompt, stream=False)
+	# if response:
+	# 	response_content = response['content'][0]['text']
+	# 	tech_que = (
+	# 			response_content.replace("```json", "")
+	# 			.replace("```", "")
+	# 			.strip()
+	# 		)
+	job_opeing.custom_technical_questions = ai_response
+	job_opeing.save()
+	return "Technical Questions Updated Successfully"
 
 # ==================== Generate Booleans ==========================
 
@@ -224,18 +224,18 @@ def generate_booleans(boolean_prompt, additional_instructions, session_id, techn
 	
 
 @frappe.whitelist()
-def fill_booleans(docname):
+def fill_booleans(docname, ai_response):
 	job_opeing = frappe.get_doc("Job Opening", docname)
-	session_id = job_opeing.custom_session_id
+	# session_id = job_opeing.custom_session_id
 
-	session = otto.load(session_id)
-	ai_prompt = """Give me Last generated Boolean only(no headings or other details)"""
-	response, _ = session.interact(ai_prompt, stream=False)
-	if response:
-		response_content = response['content'][0]['text']
-		job_opeing.custom_candidate_boolean = response_content
-		job_opeing.save()
-		return "Boolean Generated"
+	# session = otto.load(session_id)
+	# ai_prompt = """Give me Last generated Boolean only(no headings or other details)"""
+	# response, _ = session.interact(ai_prompt, stream=False)
+	# if response:
+	# 	response_content = response['content'][0]['text']
+	job_opeing.custom_candidate_boolean = ai_response
+	job_opeing.save()
+	return "Boolean Generated"
 	
 # ==================== Generate Screening Questions ==========================
 
@@ -277,18 +277,18 @@ def generate_screening_questions(screening_question_prompt, additional_instructi
 	
 
 @frappe.whitelist()
-def fill_screening_questions(docname):
+def fill_screening_questions(docname, ai_response):
 	job_opeing = frappe.get_doc("Job Opening", docname)
-	session_id = job_opeing.custom_session_id
+	# session_id = job_opeing.custom_session_id
 
-	session = otto.load(session_id)
-	ai_prompt = """Give me Last generated Screening Questions only(no headings or other details) in simple text"""
-	response, _ = session.interact(ai_prompt, stream=False)
-	if response:
-		response_content = response['content'][0]['text']
-		job_opeing.custom_screening_questions = response_content
-		job_opeing.save()
-		return "Screening Questions Generated"
+	# session = otto.load(session_id)
+	# ai_prompt = """Give me Last generated Screening Questions only(no headings or other details) in simple text"""
+	# response, _ = session.interact(ai_prompt, stream=False)
+	# if response:
+	# 	response_content = response['content'][0]['text']
+	job_opeing.custom_screening_questions = ai_response.replace("<ol>", "").replace("</ol>", "").replace("<li>", "").replace("</li>", "")
+	job_opeing.save()
+	return "Screening Questions Generated"
 
 
 # ==================== Job Applicant ==========================
@@ -310,11 +310,11 @@ def analyse_cv(cv_file,analyse_cv_prompt,additional_instructions,session_id=None
 
 		if len(job_opening.custom_jrss_mandatory_skills) > 0:
 			for jrss_skill in job_opening.custom_jrss_mandatory_skills:
-				jrss.append(jrss_skill)
+				jrss.append(jrss_skill.skill)
 
 		if len(job_opening.custom_jrss_optional_skills) > 0:
 			for jrss_skill in job_opening.custom_jrss_optional_skills:
-				jrss.append(jrss_skill)
+				jrss.append(jrss_skill.skill)
 
 
 	if not cv_file.lower().endswith(".pdf"):
@@ -363,22 +363,22 @@ def analyse_cv(cv_file,analyse_cv_prompt,additional_instructions,session_id=None
 	}
 
 @frappe.whitelist()
-def fill_cv_analysation(docname, session_id):
+def fill_cv_analysation(docname, session_id, ai_response):
 	job_applicant = frappe.get_doc("Job Applicant", docname)
 
-	session = otto.load(session_id)
-	ai_prompt = """Give me Last generated CV Enalysis only(no headings or other details)"""
-	response, _ = session.interact(ai_prompt, stream=False)
-	if response:
-		response_content = response['content'][0]['text']
-		cleaned_str = (
-				response_content.replace("```html", "")
-				.replace("```", "")
-			)
-		job_applicant.custom_analyse_cv = cleaned_str
-		job_applicant.custom_session_id = session_id
-		job_applicant.save()
-		return "Analyse CV Generated"
+	# session = otto.load(session_id)
+	# ai_prompt = """Give me Last generated CV Enalysis only(no headings or other details)"""
+	# response, _ = session.interact(ai_prompt, stream=False)
+	# if response:
+	# 	response_content = response['content'][0]['text']
+	# 	cleaned_str = (
+	# 			response_content.replace("```html", "")
+	# 			.replace("```", "")
+	# 		)
+	job_applicant.custom_analyse_cv = ai_response
+	job_applicant.custom_session_id = session_id
+	job_applicant.save()
+	return "Analyse CV Generated"
 	
 @frappe.whitelist()
 def evaluate_cv(screening_call_transcript, evaluate_candidate_prompt, additional_instructions, session_id):
@@ -425,19 +425,19 @@ def evaluate_cv(screening_call_transcript, evaluate_candidate_prompt, additional
 	}
 
 @frappe.whitelist()
-def fill_evaluate_candidate(session_id, row_name):
-	session = otto.load(session_id)
-	ai_prompt = """Give me Latest generated Evaluation of CV in HTML"""
-	response, _ = session.interact(ai_prompt, stream=False)
-	if response:
-		response_content = response['content'][0]['text']
-		cleaned_str = (
-				response_content.replace("```html", "")
-				.replace("```", "")
-			)
-		frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", cleaned_str)
+def fill_evaluate_candidate(session_id, row_name, ai_response):
+	# session = otto.load(session_id)
+	# ai_prompt = """Give me Latest generated Evaluation of CV in HTML"""
+	# response, _ = session.interact(ai_prompt, stream=False)
+	# if response:
+	# 	response_content = response['content'][0]['text']
+	# 	cleaned_str = (
+	# 			response_content.replace("```html", "")
+	# 			.replace("```", "")
+	# 		)
+	frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", ai_response)
 		# row.evaluate_candidate = response_content
-		return "Evaluate Candidate Generated"
+	return "Evaluate Candidate Generated"
 	
 @frappe.whitelist()
 def extract_details_from_candidate_cv(resume_attachment, session_id=None):

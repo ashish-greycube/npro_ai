@@ -240,6 +240,12 @@ let generate_technical_questions_dialog = function (frm) {
               label: "Response Generated",
               hidden: 1,
               default: 0
+            },
+            {
+              fieldtype: "Long Text",
+              fieldname: "ai_response",
+              label: "AI Response",
+              hidden: 1
             }
           ]
 
@@ -254,6 +260,7 @@ let generate_technical_questions_dialog = function (frm) {
                   method: "npro_ai.api.fill_technical_questions",
                   args: {
                     "docname": frm.doc.name,
+                    "ai_response": values.ai_response
                   },
                   freeze: true,
                   freeze_message: __("Adding Technical Questions..."),
@@ -286,6 +293,8 @@ let generate_technical_questions_dialog = function (frm) {
 let ask_to_generate_technical_que = function (dialog, id) {
   const d = dialog.get_values();
 
+  dialog.set_value("ai_response", "")
+
   const ui = getUIElements(id);
   resetUI(ui);
   handleStreaming(ui, "stream-llm");
@@ -306,6 +315,7 @@ let ask_to_generate_technical_que = function (dialog, id) {
 
       dialog.get_primary_btn().prop("disabled", false);
       updateFinalUI(ui, message);
+      dialog.set_value("ai_response", message.item.content[0].text)
     },
   });
 }
@@ -363,6 +373,12 @@ let generate_booleans_dialog = function (frm) {
               label: "Response Generated",
               hidden: 1,
               default: 0
+            },
+            {
+              fieldtype: "Long Text",
+              fieldname: "ai_response",
+              label: "AI Response",
+              hidden: 1
             }
           ]
 
@@ -377,6 +393,7 @@ let generate_booleans_dialog = function (frm) {
                   method: "npro_ai.api.fill_booleans",
                   args: {
                     "docname": frm.doc.name,
+                    "ai_response": values.ai_response
                   },
                   freeze: true,
                   freeze_message: __("Adding Booleans For Candidate Search..."),
@@ -411,6 +428,8 @@ let generate_booleans_dialog = function (frm) {
 let ask_to_generate_boolean = function (dialog, id) {
   const d = dialog.get_values();
 
+  dialog.set_value("ai_response", "")
+
   const ui = getUIElements(id);
   resetUI(ui);
   handleStreaming(ui, "stream-llm");
@@ -433,6 +452,8 @@ let ask_to_generate_boolean = function (dialog, id) {
 
       dialog.get_primary_btn().prop("disabled", false);
       updateFinalUI(ui, message);
+
+      dialog.set_value("ai_response", message.item.content[0].text)
     },
   });
 }
@@ -489,6 +510,12 @@ let generate_screening_question_dailog = function (frm) {
               label: "Response Generated",
               hidden: 1,
               default: 0
+            },
+            {
+              fieldtype: "Long Text",
+              fieldname: "ai_response",
+              label: "AI Response",
+              hidden: 1
             }
           ]
 
@@ -503,6 +530,7 @@ let generate_screening_question_dailog = function (frm) {
                   method: "npro_ai.api.fill_screening_questions",
                   args: {
                     "docname": frm.doc.name,
+                    "ai_response": values.ai_response
                   },
                   freeze: true,
                   freeze_message: __("Adding Screening Questions..."),
@@ -537,6 +565,8 @@ let generate_screening_question_dailog = function (frm) {
 let ask_to_generate_screening_question = function (dialog, id) {
   const d = dialog.get_values();
 
+  dialog.set_value("ai_response", "")
+
   const ui = getUIElements(id);
   resetUI(ui);
   handleStreaming(ui, "stream-llm");
@@ -559,6 +589,8 @@ let ask_to_generate_screening_question = function (dialog, id) {
 
       dialog.get_primary_btn().prop("disabled", false);
       updateFinalUI(ui, message);
+
+      dialog.set_value("ai_response", message.item.content[0].text)
     },
   });
 }

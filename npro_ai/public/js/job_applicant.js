@@ -171,6 +171,12 @@ let analyse_cv_dialog = function (frm) {
                             label: "Response Generated",
                             hidden: 1,
                             default: 0
+                        },
+                        {
+                            fieldtype: "Long Text",
+                            fieldname: "ai_response",
+                            label: "AI Response",
+                            hidden: 1
                         }
                     ]
 
@@ -185,7 +191,8 @@ let analyse_cv_dialog = function (frm) {
                                     method: "npro_ai.api.fill_cv_analysation",
                                     args: {
                                         "docname": frm.doc.name,
-                                        "session_id": values.session_id
+                                        "session_id": values.session_id,
+                                        "ai_response": values.ai_response
                                     },
                                     freeze: true,
                                     freeze_message: __("Adding CV Analysis..."),
@@ -214,6 +221,8 @@ let ask_to_analyse_cv = function (dialog, id) {
     const d = dialog.get_values();
     const ui = getUIElements(id);
 
+    dialog.set_value("ai_response", "")
+
     resetUI(ui);
     handleStreaming(ui, "stream-llm");
 
@@ -237,6 +246,7 @@ let ask_to_analyse_cv = function (dialog, id) {
 
             dialog.get_primary_btn().prop("disabled", false);
             updateFinalUI(ui, message);
+            dialog.set_value("ai_response", message.item.content[0].text)
         },
     });
 
@@ -312,6 +322,12 @@ let evaluate_candidate_dialog = function(frm, row){
                             label: "Response Generated",
                             hidden: 1,
                             default: 0
+                        },
+                        {
+                            fieldtype: "Long Text",
+                            fieldname: "ai_response",
+                            label: "AI Response",
+                            hidden: 1
                         }
                     ]
 
@@ -326,7 +342,8 @@ let evaluate_candidate_dialog = function(frm, row){
                                     method: "npro_ai.api.fill_evaluate_candidate",
                                     args: {
                                         "session_id": frm.doc.custom_session_id,
-                                        "row_name": row.name
+                                        "row_name": row.name,
+                                        "ai_response": values.ai_response
                                     },
                                     freeze: true,
                                     freeze_message: __("Adding Candidate Evaluation..."),
@@ -360,6 +377,8 @@ let ask_to_evaluate_candidate = function (dialog, id, file_name) {
     const d = dialog.get_values();
     const ui = getUIElements(id);
 
+    dialog.set_value("ai_response", "")
+
     resetUI(ui);
     handleStreaming(ui, "stream-llm");
 
@@ -372,6 +391,7 @@ let ask_to_evaluate_candidate = function (dialog, id, file_name) {
             session_id: frm.doc.custom_session_id || undefined,
         },
         callback({ message }) {
+            // console.log({message}, "================message=======")
             dialog.set_value("session_id", message.session_id);
             dialog.set_value("additional_instructions", "");
             dialog.set_value("response_generated", 1)
@@ -381,6 +401,7 @@ let ask_to_evaluate_candidate = function (dialog, id, file_name) {
 
             dialog.get_primary_btn().prop("disabled", false);
             updateFinalUI(ui, message);
+            dialog.set_value("ai_response", message.item.content[0].text)
         },
     });
 
