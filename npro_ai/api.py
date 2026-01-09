@@ -38,7 +38,7 @@ def generate_jrss_from_job_description(jd_file, generate_jrss_prompt, additional
 
 	else:
 		session = otto.load(session_id)
-		ai_prompt = additional_instructions + "\n" + "give me output in HTML Format."
+		ai_prompt = generate_jrss_prompt + " " +  additional_instructions + "\n" + "give me output in HTML Format."
 		stream = session.interact(ai_prompt, stream=True)
 
 	try:
@@ -180,7 +180,7 @@ def fill_technical_questions(docname, ai_response):
 	# 			.replace("```", "")
 	# 			.strip()
 	# 		)
-	job_opeing.custom_technical_questions = ai_response
+	job_opeing.custom_technical_questions = ai_response.replace("```json", "").replace("```", "").strip()
 	job_opeing.save()
 	return "Technical Questions Updated Successfully"
 
@@ -375,7 +375,7 @@ def fill_cv_analysation(docname, session_id, ai_response):
 	# 			response_content.replace("```html", "")
 	# 			.replace("```", "")
 	# 		)
-	job_applicant.custom_analyse_cv = ai_response
+	job_applicant.custom_analyse_cv = ai_response.replace("```html", "").replace("```", "")
 	job_applicant.custom_session_id = session_id
 	job_applicant.save()
 	return "Analyse CV Generated"
@@ -435,7 +435,7 @@ def fill_evaluate_candidate(session_id, row_name, ai_response):
 	# 			response_content.replace("```html", "")
 	# 			.replace("```", "")
 	# 		)
-	frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", ai_response)
+	frappe.db.set_value("Evaluate Candidate Details CT", row_name, "evaluate_candidate", ai_response.replace("```html", "").replace("```", ""))
 		# row.evaluate_candidate = response_content
 	return "Evaluate Candidate Generated"
 	
