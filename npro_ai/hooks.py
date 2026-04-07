@@ -173,6 +173,12 @@ after_migrate = "npro_ai.migrate.after_migrate"
 # 	],
 # }
 
+scheduler_events = {
+	"cron": {
+        "*/15 * * * *" : "npro_ai.firefiles.get_transcript"
+    }
+}
+
 # Testing
 # -------
 

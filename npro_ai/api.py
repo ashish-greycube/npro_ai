@@ -381,22 +381,24 @@ def fill_cv_analysation(docname, session_id, ai_response):
 	return "Analyse CV Generated"
 	
 @frappe.whitelist()
-def evaluate_cv(screening_call_transcript, evaluate_candidate_prompt, additional_instructions, session_id):
+def evaluate_cv(transcript, evaluate_candidate_prompt, additional_instructions, session_id):
 	if not session_id:
 		return {"error": "Analyse Candidate CV First to Evaluate CV."}
 	
-	if not screening_call_transcript.lower().endswith(".pdf"):
-		return {"error": "LLM Only Supports PDF Files"}
+	# if not screening_call_transcript.lower().endswith(".pdf"):
+	# 	return {"error": "LLM Only Supports PDF Files"}
 
 	session = otto.load(session_id)
 	model = otto.get_model(size="Small", provider=ai_provider)
 	# respose_format = """Format: Create an HTML table with EXACTLY the following 4 columns: 1. Criteria (JRSS Skill, Technical Questions, JD Title Discrepancy),  2. JD (jd_name) / JRSS / Technical Questions  3. Candidate CV Details  4. Evaluation (In less then 100 characters, (background-color for Evaluation column only)), not add extra text in header"""
 	respose_format = """Format: Create an HTML table with EXACTLY the following 2 columns header: 1. Section,  2. Details, do not add extra text in header"""
 
-	ai_prompt = evaluate_candidate_prompt + "\n" + additional_instructions + "\n" + " and do not give extra details which are not asked.(Refer Previously Attached CV)." + respose_format + "Give output in HTML Format."
+	ai_prompt = evaluate_candidate_prompt + "\n" + additional_instructions + "\n" + "Transcript Text: \n {0}".format(transcript) + "\n\n" + " and do not give extra details which are not asked.(Refer Previously Attached CV)." + respose_format + "Give output in HTML Format."
 
 
-	stream = session.interact([content.file(screening_call_transcript, name="cv_file.pdf") ,ai_prompt], stream=True)
+	stream = session.interact(ai_prompt, stream=True)
+	
+	# stream = session.interact([content.file(screening_call_transcript, name="cv_file.pdf") ,ai_prompt], stream=True)
 
 	try:
 		for chunk in stream:
@@ -504,3 +506,9 @@ def parse_json_string(raw_str):
 		frappe.throw(f"Invalid JSON format: {e}")
 
 	return data
+
+@frappe.whitelist()
+def check_screening_call_audio_file_format(file):
+	if not file.lower().endswith((".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
+		frappe.msgprint(_("Only Audio Files are allowed for Screening Call. <br> <b>Valid formats are - .mp3, .mp4, .wav, .m4a, .ogg</b>"))
+		return True

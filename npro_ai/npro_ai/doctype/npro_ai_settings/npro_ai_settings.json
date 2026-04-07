@@ -7,6 +7,8 @@
  "field_order": [
   "tab_break_mbuy",
   "ai_provider",
+  "column_break_zmmf",
+  "firefiles_api_key",
   "job_opening_section",
   "generate_jrss_prompt",
   "get_technical_questions_prompt",
@@ -69,13 +71,23 @@
    "label": "AI Provider",
    "options": "OpenAI\nGoogle",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_zmmf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "firefiles_api_key",
+   "fieldtype": "Password",
+   "label": "Firefiles AI API Key",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-12-02 10:26:03.781045",
+ "modified": "2026-04-02 13:11:48.985483",
  "modified_by": "Administrator",
  "module": "Npro Ai",
  "name": "Npro AI Settings",
