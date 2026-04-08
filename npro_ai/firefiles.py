@@ -66,8 +66,8 @@ def upload_transcription(docname, audio_url):
 					if is_private_file:
 						frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
 
-					time.sleep(40)  # Wait for a while before fetching transcript to allow processing to start
-					get_transcript(audio_title)  # Trigger transcript fetching after a delay
+					# time.sleep(45)  # Wait for a while before fetching transcript to allow processing to start
+					# get_transcript(audio_title)  # Trigger transcript fetching after a delay
 						
 				else:
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
