@@ -64,14 +64,14 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Transcript Status",
-   "options": "\nProcessing\nCompleted\nUpload Failed\nFailed to Fetch Transcript"
+   "options": "\nProcessing\nCompleted\nUpload Failed\nTranscript Not Found\nFailed to Fetch Transcript"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-07 10:29:26.000307",
+ "modified": "2026-04-08 13:36:56.748270",
  "modified_by": "Administrator",
  "module": "Npro Ai",
  "name": "Evaluate Candidate Details CT",

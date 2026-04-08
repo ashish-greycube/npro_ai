@@ -2,6 +2,7 @@ import frappe
 import requests
 from frappe.utils import get_link_to_form
 import json
+import time
 
 settings = frappe.get_single("Npro AI Settings")
 
@@ -26,11 +27,7 @@ def upload_transcription(docname, audio_url):
 				else:
 					is_private_file = True	
 					file_url = frappe.utils.get_url(public_file_url)
-				# frappe.db.set_value("File", file_doc.name, "is_private", 0)
-				# file_doc.is_private = 0
-				# file_url = file_url.replace("/private/files/", "/files/")
-				# file_doc.save(ignore_permissions=True)
-
+				
 		"""
 		Step 1: Upload and tag with 'client_reference_id'
 		"""
@@ -46,7 +43,6 @@ def upload_transcription(docname, audio_url):
 		audio_title = "{0}-{1}".format(file_doc.file_name, docname)
 		# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only
 
-		# Using 'docname' as the reference ID so we can find it later
 		variables = {
 				"input": {
 						"url": file_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
@@ -65,13 +61,14 @@ def upload_transcription(docname, audio_url):
 				if response_json.get('data', {}).get('uploadAudio', {}).get('success'):
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
-					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript.", alert=True)
+					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
 
 					if is_private_file:
 						frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
-						# frappe.db.set_value("File", file_doc.name, "is_private", 1)
-						# file_doc.is_private = 1
-						# file_doc.save(ignore_permissions=True)
+
+					time.sleep(40)  # Wait for a while before fetching transcript to allow processing to start
+					get_transcript(audio_title)  # Trigger transcript fetching after a delay
+						
 				else:
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
 					log = frappe.log_error("Fireflies API Error: {0}".format(response_json.get('message')), "Fireflies Upload Failed")
@@ -90,8 +87,13 @@ def upload_transcription(docname, audio_url):
 
 ### run scheduler in every 15min to get transcripts which are in processing state and update the transcript text in the doctype once the status is completed.
 @frappe.whitelist()
-def get_transcript():
-	uploaded_audios = frappe.get_all("Evaluate Candidate Details CT", filters={"transcript_status": "Processing"}, fields=["name", "file_title", "parenttype", "parent"])
+def get_transcript(audio_title=None):
+	uploaded_audios = []
+	if not audio_title:
+		uploaded_audios = frappe.get_all("Evaluate Candidate Details CT", filters={"transcript_status": "Processing"}, fields=["name", "file_title", "parenttype", "parent"])
+	else:
+		uploaded_audios = frappe.get_all("Evaluate Candidate Details CT", filters={"transcript_status": "Processing", "file_title": audio_title}, fields=["name", "file_title", "parenttype", "parent"])
+	
 	# print(uploaded_audios, "======uploaded_audios=====")
 	if len(uploaded_audios) > 0:
 		for evaluate_doc in uploaded_audios:
@@ -120,8 +122,10 @@ def get_transcript():
 					continue
 
 				transcripts_found = res.json().get("data", {}).get("transcripts", [])
+				# print(transcripts_found, "========transcripts_found=======")
 
 				if len(transcripts_found) == 0:
+					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Transcript Not Found")
 					continue
 				else:
 					for transcript in transcripts_found:
