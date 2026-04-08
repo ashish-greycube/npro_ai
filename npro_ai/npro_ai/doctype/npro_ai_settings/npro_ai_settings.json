@@ -79,15 +79,14 @@
   {
    "fieldname": "firefiles_api_key",
    "fieldtype": "Password",
-   "label": "Firefiles AI API Key",
-   "reqd": 1
+   "label": "Firefiles AI API Key"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-02 13:11:48.985483",
+ "modified": "2026-04-08 08:46:51.285762",
  "modified_by": "Administrator",
  "module": "Npro Ai",
  "name": "Npro AI Settings",
