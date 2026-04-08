@@ -13,10 +13,13 @@ HEADERS = {"Authorization": f"Bearer {FIREFLIES_API_KEY}", "Content-Type": "appl
 def upload_transcription(docname, audio_url):
 		# check if file is public or private:
 		file_doc = frappe.get_doc("File", {"file_url": audio_url})
+		file_url = frappe.utils.get_url(audio_url)
+
 		is_private_file = False
 		if file_doc.is_private:
 				file_doc.is_private = 0
 				is_private_file = True
+				file_url = file_url.replace("/private/files/", "/files/")
 				file_doc.save(ignore_permissions=True)
 
 		"""
@@ -37,7 +40,7 @@ def upload_transcription(docname, audio_url):
 		# Using 'docname' as the reference ID so we can find it later
 		variables = {
 				"input": {
-						"url": audio_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
+						"url": file_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
 						"title": audio_title,
 						"client_reference_id": docname 
 				}
