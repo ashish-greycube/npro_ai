@@ -282,7 +282,7 @@ let ask_to_analyse_cv = function (dialog, id) {
 let find_valid_evaluate_candidate_row = function(frm){
     console.log("find_valid_evaluate_candidate_row")
     frm.doc.custom_evaluate_candidate_details.forEach(row => {
-        if ((!row.evaluate_candidate || row.evaluate_candidate == '<div class="ql-editor read-mode"><p><br></p></div>') && row.transcript_id && row.transcript ){
+        if ((!row.evaluate_candidate || row.evaluate_candidate == '<div class="ql-editor read-mode"><p><br></p></div>') && row.transcript && row.transcript != '' ){
             evaluate_candidate_dialog(frm, row)
         }
         else if (row.idx == frm.doc.custom_evaluate_candidate_details.length && (row.evaluate_candidate || row.evaluate_candidate != '<div class="ql-editor read-mode"><p><br></p></div>') ){

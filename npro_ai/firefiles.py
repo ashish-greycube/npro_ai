@@ -45,7 +45,7 @@ def upload_transcription(docname, audio_url):
 
 		try:
 			response = requests.post(ENDPOINT, json={'query': mutation, 'variables': variables}, headers=HEADERS)
-			if response.ok:
+			if response.status_code == 200:
 				response_json = response.json()
 				# response = {'data': {'uploadAudio': {'success': True, 'message': 'Uploaded audio has been queued for processing.'}}} ========response_json==========
 
@@ -54,6 +54,7 @@ def upload_transcription(docname, audio_url):
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
 					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript.", alert=True)
+
 					if is_private_file:
 						file_doc.is_private = 1
 						file_doc.save(ignore_permissions=True)
