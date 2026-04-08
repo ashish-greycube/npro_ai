@@ -105,16 +105,21 @@ frappe.ui.form.on("Evaluate Candidate Details CT", {
     },
     upload_transcript: function(frm, cdt, cdn){
         let row = locals[cdt][cdn]
-        frappe.call({
-            method: "npro_ai.firefiles.upload_transcription",
-            args: {
-                "docname": row.name,
-                "audio_url": row.screening_call_transcript
-            },
-            callback: function (r) {
-                console.log(r.message, "========r.message from upload_transcription========")
-            }
-        })
+        if (row.screening_call_transcript && (row.transcript_status !== "Processing" && row.transcript_status !== "Completed")){
+            frappe.call({
+                method: "npro_ai.firefiles.upload_transcription",
+                args: {
+                    "docname": row.name,
+                    "audio_url": row.screening_call_transcript
+                },
+                callback: function (r) {
+                    console.log(r.message, "========r.message from upload_transcription========")
+                }
+            })
+        }
+        else{
+            frappe.show_alert(__("Please Attach Screening Call Transcript First or Transcript is already processing / completed."), 5);
+        }
     },
     print: function(frm, cdt, cdn){
         if (frm.is_dirty()) {

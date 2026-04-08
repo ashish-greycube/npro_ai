@@ -16,11 +16,19 @@ def upload_transcription(docname, audio_url):
 		file_url = frappe.utils.get_url(audio_url)
 
 		is_private_file = False
+		public_file_name = None
 		if file_doc.is_private:
-				frappe.db.set_value("File", file_doc.name, "is_private", 0)
+				public_file_name, public_file_url = create_private_file_copy(file_doc.name)
+				if not public_file_url:
+					frappe.error_log(title="Fireflies Upload Error", message="Failed to create public copy of the file for upload.")
+					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+					return {"error": "Failed to create public copy of the file for upload."}
+				else:
+					is_private_file = True	
+					file_url = frappe.utils.get_url(public_file_url)
+				# frappe.db.set_value("File", file_doc.name, "is_private", 0)
 				# file_doc.is_private = 0
-				is_private_file = True
-				file_url = file_url.replace("/private/files/", "/files/")
+				# file_url = file_url.replace("/private/files/", "/files/")
 				# file_doc.save(ignore_permissions=True)
 
 		"""
@@ -60,7 +68,8 @@ def upload_transcription(docname, audio_url):
 					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript.", alert=True)
 
 					if is_private_file:
-						frappe.db.set_value("File", file_doc.name, "is_private", 1)
+						frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
+						# frappe.db.set_value("File", file_doc.name, "is_private", 1)
 						# file_doc.is_private = 1
 						# file_doc.save(ignore_permissions=True)
 				else:
@@ -165,3 +174,13 @@ def get_transcript():
 				continue
 
 	return "Process completed."
+
+
+def create_private_file_copy(file_name):
+	file_doc = frappe.get_doc("File", file_name)
+	new_doc = frappe.new_doc("File")
+	new_doc.is_private = 0
+	new_doc.file_name = "public_" + file_doc.file_name
+	new_doc.content=file_doc.get_content()
+	new_doc.save()
+	return new_doc.name, new_doc.file_url
