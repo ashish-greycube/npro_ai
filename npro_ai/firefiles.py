@@ -17,10 +17,11 @@ def upload_transcription(docname, audio_url):
 
 		is_private_file = False
 		if file_doc.is_private:
-				file_doc.is_private = 0
+				frappe.db.set_value("File", file_doc.name, "is_private", 0)
+				# file_doc.is_private = 0
 				is_private_file = True
 				file_url = file_url.replace("/private/files/", "/files/")
-				file_doc.save(ignore_permissions=True)
+				# file_doc.save(ignore_permissions=True)
 
 		"""
 		Step 1: Upload and tag with 'client_reference_id'
@@ -59,8 +60,9 @@ def upload_transcription(docname, audio_url):
 					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript.", alert=True)
 
 					if is_private_file:
-						file_doc.is_private = 1
-						file_doc.save(ignore_permissions=True)
+						frappe.db.set_value("File", file_doc.name, "is_private", 1)
+						# file_doc.is_private = 1
+						# file_doc.save(ignore_permissions=True)
 				else:
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
 					log = frappe.log_error("Fireflies API Error: {0}".format(response_json.get('message')), "Fireflies Upload Failed")
