@@ -19,18 +19,18 @@ def upload_transcription(docname, audio_url):
 		is_private_file = False
 		public_file_name = None
 		if file_doc.is_private:
-				public_file_name, public_file_url = create_private_file_copy(file_doc.name)
-				if not public_file_url:
-					frappe.error_log(title="Fireflies Upload Error", message="Failed to create public copy of the file for upload.")
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-					return {"error": "Failed to create public copy of the file for upload."}
-				else:
-					is_private_file = True	
-					file_url = frappe.utils.get_url(public_file_url)
+			public_file_name, public_file_url = create_private_file_copy(file_doc.name)
+			if not public_file_url:
+				frappe.log_error(title="Fireflies Upload Error", message="Failed to create public copy of the file for upload.")
+				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+				return {"error": "Failed to create public copy of the file for upload."}
+			else:
+				is_private_file = True	
+				file_url = frappe.utils.get_url(public_file_url)
 
 		if file_url:
 			if not frappe.db.exists("File", {"file_url": file_url}):
-				log = frappe.error_log(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(file_url))
+				log = frappe.log_error(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(file_url))
 				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(file_url, get_link_to_form("Error Log", log.name)), alert=True)
 				return {"error": "File URL does not exist in the system."}
 				
