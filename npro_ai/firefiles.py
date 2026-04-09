@@ -21,6 +21,7 @@ def upload_audio_file(docname, audio_url):
 
 		if file_doc.is_private:
 			public_file_name, public_file_url = create_private_file_copy(file_doc.name)
+			audio_url = public_file_url
 			if not public_file_url:
 				frappe.log_error(title="Fireflies Upload Error", message="Failed to create public copy of the file for upload.")
 				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
@@ -33,10 +34,10 @@ def upload_audio_file(docname, audio_url):
 		else:
 			full_url = frappe.utils.get_url(urllib.parse.quote(audio_url))
 		
-		if full_url:
-			if not frappe.db.exists("File", {"file_url": full_url}):
-				log = frappe.log_error(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(full_url))
-				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(full_url, get_link_to_form("Error Log", log.name)))
+		if audio_url:
+			if not frappe.db.exists("File", {"file_url": audio_url}):
+				log = frappe.log_error(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(audio_url))
+				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(audio_url, get_link_to_form("Error Log", log.name)))
 				if is_private_file:
 					delete_public_file_copy(public_file_name)  # Clean up the public copy
 				return {"error": "File URL does not exist in the system."}
