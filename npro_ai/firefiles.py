@@ -27,6 +27,12 @@ def upload_transcription(docname, audio_url):
 				else:
 					is_private_file = True	
 					file_url = frappe.utils.get_url(public_file_url)
+
+		if file_url:
+			if not frappe.db.exists("File", {"file_url": file_url}):
+				log = frappe.error_log(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(file_url))
+				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(file_url, get_link_to_form("Error Log", log.name)), alert=True)
+				return {"error": "File URL does not exist in the system."}
 				
 		"""
 		Step 1: Upload and tag with 'client_reference_id'
@@ -53,37 +59,62 @@ def upload_transcription(docname, audio_url):
 
 		try:
 			response = requests.post(ENDPOINT, json={'query': mutation, 'variables': variables}, headers=HEADERS)
-			if response.status_code == 200:
-				response_json = response.json()
-				# response = {'data': {'uploadAudio': {'success': True, 'message': 'Uploaded audio has been queued for processing.'}}} ========response_json==========
+			response.raise_for_status() # Raises HTTPError for 4xx/5xx codes
+			response_json = response.json()
+			data = response_json.get('data') or {}
+			upload_result = data.get('uploadAudio')
+			errors = response_json.get('errors')
 
-				# print(response_json, "========response_json==========")
-				if response_json.get('data', {}).get('uploadAudio', {}).get('success'):
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
-					frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
-
-					if is_private_file:
-						frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
-
-					# time.sleep(45)  # Wait for a while before fetching transcript to allow processing to start
-					# get_transcript(audio_title)  # Trigger transcript fetching after a delay
-						
-				else:
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-					log = frappe.log_error("Fireflies API Error: {0}".format(response_json.get('message')), "Fireflies Upload Failed")
-					frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+			if upload_result and upload_result.get('success'):
+				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
+				frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
+				frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
 			else:
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-					log = frappe.log_error("HTTP Error {0}: {1}".format(response.status_code, response.text), "Fireflies Upload Failed")
-					frappe.msgprint("HTTP Error {0}: {1}".format(response.status_code, get_link_to_form(log.name)), alert=True)
+				# Handle GraphQL errors or business logic failure
+				error_msg = errors[0].get('message') if errors else "Unknown Fireflies Error"
+				if upload_result and upload_result.get('message'):
+					error_msg = upload_result.get('message')
+
+				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+				log = frappe.log_error("Fireflies API Error: {0}".format(error_msg), "Fireflies Upload Failed")
+				frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+
+
+			# if response.status_code == 200:
+			# 	response_json = response.json()
+			# 	# response = {'data': {'uploadAudio': {'success': True, 'message': 'Uploaded audio has been queued for processing.'}}} ========response_json==========
+
+			# 	# print(response_json, "========response_json==========")
+			# 	if response_json.get('data', {}).get('uploadAudio', {}).get('success'):
+			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
+			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
+			# 		frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
+
+			# 	else:
+			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+			# 		log = frappe.log_error("Fireflies API Error: {0}".format(response_json.get('message')), "Fireflies Upload Failed")
+			# 		frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+			# else:
+			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+			# 		log = frappe.log_error("HTTP Error {0}: {1}".format(response.status_code, response.text), "Fireflies Upload Failed")
+			# 		frappe.msgprint("HTTP Error {0}: {1}".format(response.status_code, get_link_to_form(log.name)), alert=True)
+
+			if is_private_file:
+				if frappe.db.exists("File", public_file_name):
+					frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
+
+			parent_doc_name = frappe.db.get_value("Evaluate Candidate Details CT", docname, "parent")
+			parent_doc = frappe.get_doc("Job Applicant", parent_doc_name)
+			parent_doc.flags.ignore_mandatory = True
+			parent_doc.save(ignore_permissions=True)
+			parent_doc.reload()
 			
 			return response.json()
 		except Exception as e:
-				error = frappe.get_traceback()
-				log = frappe.log_error(title="Fireflies Upload Error", message=error)
-				frappe.msgprint("Fireflies Upload Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
-				return {"error": str(e)}
+			error = frappe.get_traceback()
+			log = frappe.log_error(title="Fireflies Upload Error", message=error)
+			frappe.msgprint("Fireflies Upload Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+			return {"error": str(e)}
 
 ### run scheduler in every 15min to get transcripts which are in processing state and update the transcript text in the doctype once the status is completed.
 @frappe.whitelist()
@@ -124,7 +155,7 @@ def get_transcript(audio_title=None):
 				transcripts_found = res.json().get("data", {}).get("transcripts", [])
 				# print(transcripts_found, "========transcripts_found=======")
 
-				if len(transcripts_found) == 0:
+				if not transcripts_found:
 					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Transcript Not Found")
 					continue
 				else:
