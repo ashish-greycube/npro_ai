@@ -27,12 +27,7 @@ def upload_audio_file(docname, audio_url):
 				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
 				return {"error": "Failed to create public copy of the file for upload."}
 			else:
-				is_private_file = True	
-				file_url = frappe.utils.get_url(public_file_url)
-				encoded_url = urllib.parse.quote(file_url)
-				full_url = frappe.utils.get_url(encoded_url)
-		else:
-			full_url = frappe.utils.get_url(urllib.parse.quote(audio_url))
+				is_private_file = True
 		
 		if audio_url:
 			if not frappe.db.exists("File", {"file_url": audio_url}):
@@ -41,71 +36,74 @@ def upload_audio_file(docname, audio_url):
 				if is_private_file:
 					delete_public_file_copy(public_file_name)  # Clean up the public copy
 				return {"error": "File URL does not exist in the system."}
-				
-		"""
-		Step 1: Upload and tag with 'client_reference_id'
-		"""
-		mutation = """
-		mutation($input: AudioUploadInput) {
-			uploadAudio(input: $input) {
-				success
-				message
-			}
-		}
-		"""
-
-		audio_title = "{0}-{1}".format(file_doc.file_name, docname)
-		# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only
-
-		variables = {
-				"input": {
-						"url": full_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
-						"title": audio_title,
-						"client_reference_id": docname 
-				}
-		}
-
-		try:
-			response = requests.post(ENDPOINT, json={'query': mutation, 'variables': variables}, headers=HEADERS)
-			response.raise_for_status() # Raises HTTPError for 4xx/5xx codes
-			response_json = response.json()
-			data = response_json.get('data') or {}
-			upload_result = data.get('uploadAudio')
-			errors = response_json.get('errors')
-
-			if upload_result and upload_result.get('success'):
-				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
-				frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
-				frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
 			else:
-				# Handle GraphQL errors or business logic failure
-				error_msg = errors[0].get('message') if errors else "Unknown Fireflies Error"
-				if upload_result and upload_result.get('message'):
-					error_msg = upload_result.get('message')
+				encoded_url = urllib.parse.quote(audio_url)
+				full_url = frappe.utils.get_url(encoded_url)
 
-				frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-				log = frappe.log_error("Fireflies API Error: {0}".format(error_msg), "Fireflies Upload Failed")
-				frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+				"""
+				Step 1: Upload and tag with 'client_reference_id'
+				"""
+				mutation = """
+				mutation($input: AudioUploadInput) {
+					uploadAudio(input: $input) {
+						success
+						message
+					}
+				}
+				"""
 
-			if is_private_file:
-				delete_public_file_copy(public_file_name)  # Clean up the public copy after upload
+				audio_title = "{0}-{1}".format(file_doc.file_name, docname)
+				# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only
 
-			parent_doc_name = frappe.db.get_value("Evaluate Candidate Details CT", docname, "parent")
-			parent_doc = frappe.get_doc("Job Applicant", parent_doc_name)
-			parent_doc.flags.ignore_mandatory = True
-			parent_doc.save(ignore_permissions=True)
-			parent_doc.reload()
-			
-			return response.json()
-		except Exception as e:
-			error = frappe.get_traceback()
-			log = frappe.log_error(title="Fireflies Upload Error", message=error)
-			frappe.msgprint("Fireflies Upload Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+				variables = {
+						"input": {
+								"url": full_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
+								"title": audio_title,
+								"client_reference_id": docname 
+						}
+				}
 
-			if is_private_file:
-				delete_public_file_copy(public_file_name) # Clean up the public copy in case of error as well
+				try:
+					response = requests.post(ENDPOINT, json={'query': mutation, 'variables': variables}, headers=HEADERS)
+					response.raise_for_status() # Raises HTTPError for 4xx/5xx codes
+					response_json = response.json()
+					data = response_json.get('data') or {}
+					upload_result = data.get('uploadAudio')
+					errors = response_json.get('errors')
 
-			return {"error": str(e)}
+					if upload_result and upload_result.get('success'):
+						frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
+						frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
+						frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
+					else:
+						# Handle GraphQL errors or business logic failure
+						error_msg = errors[0].get('message') if errors else "Unknown Fireflies Error"
+						if upload_result and upload_result.get('message'):
+							error_msg = upload_result.get('message')
+
+						frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
+						log = frappe.log_error("Fireflies API Error: {0}".format(error_msg), "Fireflies Upload Failed")
+						frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+
+					parent_doc_name = frappe.db.get_value("Evaluate Candidate Details CT", docname, "parent")
+					parent_doc = frappe.get_doc("Job Applicant", parent_doc_name)
+					parent_doc.flags.ignore_mandatory = True
+					parent_doc.save(ignore_permissions=True)
+					parent_doc.reload()
+
+					if is_private_file:
+						delete_public_file_copy(public_file_name)  # Clean up the public copy after upload
+					
+					return response.json()
+				except Exception as e:
+					error = frappe.get_traceback()
+					log = frappe.log_error(title="Fireflies Upload Error", message=error)
+					frappe.msgprint("Fireflies Upload Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+
+					if is_private_file:
+						delete_public_file_copy(public_file_name) # Clean up the public copy in case of error as well
+
+					return {"error": str(e)}
 
 @frappe.whitelist()
 def get_transcript(docname):
