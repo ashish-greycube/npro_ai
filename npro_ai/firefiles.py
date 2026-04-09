@@ -3,6 +3,7 @@ import requests
 from frappe.utils import get_link_to_form
 import json
 import time
+import urllib.parse
 
 settings = frappe.get_single("Npro AI Settings")
 
@@ -11,13 +12,13 @@ ENDPOINT = "https://api.fireflies.ai/graphql"
 HEADERS = {"Authorization": f"Bearer {FIREFLIES_API_KEY}", "Content-Type": "application/json"}
 
 @frappe.whitelist()
-def upload_transcription(docname, audio_url):
+def upload_audio_file(docname, audio_url):
 		# check if file is public or private:
 		file_doc = frappe.get_doc("File", {"file_url": audio_url})
-		file_url = frappe.utils.get_url(audio_url)
 
 		is_private_file = False
 		public_file_name = None
+
 		if file_doc.is_private:
 			public_file_name, public_file_url = create_private_file_copy(file_doc.name)
 			if not public_file_url:
@@ -27,11 +28,17 @@ def upload_transcription(docname, audio_url):
 			else:
 				is_private_file = True	
 				file_url = frappe.utils.get_url(public_file_url)
-
-		if file_url:
-			if not frappe.db.exists("File", {"file_url": file_url}):
-				log = frappe.log_error(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(file_url))
-				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(file_url, get_link_to_form("Error Log", log.name)), alert=True)
+				encoded_url = urllib.parse.quote(file_url)
+				full_url = frappe.utils.get_url(encoded_url)
+		else:
+			full_url = frappe.utils.get_url(urllib.parse.quote(audio_url))
+		
+		if full_url:
+			if not frappe.db.exists("File", {"file_url": full_url}):
+				log = frappe.log_error(title="Fireflies Upload Error", message="File URL does not exist in the system: {0}".format(full_url))
+				frappe.msgprint("File URL does not exist in the system: {0}. Error Log: {1}".format(full_url, get_link_to_form("Error Log", log.name)))
+				if is_private_file:
+					delete_public_file_copy(public_file_name)  # Clean up the public copy
 				return {"error": "File URL does not exist in the system."}
 				
 		"""
@@ -51,7 +58,7 @@ def upload_transcription(docname, audio_url):
 
 		variables = {
 				"input": {
-						"url": file_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
+						"url": full_url,   # "https://test15.greycube.in/files/narendrakumar.mp3", <-- For Testing only
 						"title": audio_title,
 						"client_reference_id": docname 
 				}
@@ -79,29 +86,8 @@ def upload_transcription(docname, audio_url):
 				log = frappe.log_error("Fireflies API Error: {0}".format(error_msg), "Fireflies Upload Failed")
 				frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
 
-
-			# if response.status_code == 200:
-			# 	response_json = response.json()
-			# 	# response = {'data': {'uploadAudio': {'success': True, 'message': 'Uploaded audio has been queued for processing.'}}} ========response_json==========
-
-			# 	# print(response_json, "========response_json==========")
-			# 	if response_json.get('data', {}).get('uploadAudio', {}).get('success'):
-			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Processing")
-			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "file_title", audio_title)
-			# 		frappe.msgprint("Audio File uploading..., it may take few mintues to get the transcript (Maximun 30min).", alert=True)
-
-			# 	else:
-			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-			# 		log = frappe.log_error("Fireflies API Error: {0}".format(response_json.get('message')), "Fireflies Upload Failed")
-			# 		frappe.msgprint("Fireflies API Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
-			# else:
-			# 		frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Upload Failed")
-			# 		log = frappe.log_error("HTTP Error {0}: {1}".format(response.status_code, response.text), "Fireflies Upload Failed")
-			# 		frappe.msgprint("HTTP Error {0}: {1}".format(response.status_code, get_link_to_form(log.name)), alert=True)
-
 			if is_private_file:
-				if frappe.db.exists("File", public_file_name):
-					frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload
+				delete_public_file_copy(public_file_name)  # Clean up the public copy after upload
 
 			parent_doc_name = frappe.db.get_value("Evaluate Candidate Details CT", docname, "parent")
 			parent_doc = frappe.get_doc("Job Applicant", parent_doc_name)
@@ -114,99 +100,90 @@ def upload_transcription(docname, audio_url):
 			error = frappe.get_traceback()
 			log = frappe.log_error(title="Fireflies Upload Error", message=error)
 			frappe.msgprint("Fireflies Upload Error: {0}".format(get_link_to_form("Error Log", log.name)), alert=True)
+
+			if is_private_file:
+				delete_public_file_copy(public_file_name) # Clean up the public copy in case of error as well
+
 			return {"error": str(e)}
 
-### run scheduler in every 15min to get transcripts which are in processing state and update the transcript text in the doctype once the status is completed.
 @frappe.whitelist()
-def get_transcript(audio_title=None):
-	uploaded_audios = []
-	if not audio_title:
-		uploaded_audios = frappe.get_all("Evaluate Candidate Details CT", filters={"transcript_status": "Processing"}, fields=["name", "file_title", "parenttype", "parent"])
-	else:
-		uploaded_audios = frappe.get_all("Evaluate Candidate Details CT", filters={"transcript_status": "Processing", "file_title": audio_title}, fields=["name", "file_title", "parenttype", "parent"])
-	
-	# print(uploaded_audios, "======uploaded_audios=====")
-	if len(uploaded_audios) > 0:
-		for evaluate_doc in uploaded_audios:
-			docname = evaluate_doc.name
+def get_transcript(docname):
+	evaluate_doc = frappe.get_doc("Evaluate Candidate Details CT", docname)
+	audio_title = evaluate_doc.file_title
+	# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only
+	try:
+		search_query = """
+					query Transcripts($keyword: String, $userId: String) {
+					transcripts(keyword: $keyword, scope: "title", user_id: $userId) {
+						title
+						id
+					}
+					}
+				"""
+		
+		# print("========searchhhh====")
 
-			audio_title = evaluate_doc.file_title
-			# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only
-			try:
-				search_query = """
-							query Transcripts($keyword: String, $userId: String) {
-							transcripts(keyword: $keyword, scope: "title", user_id: $userId) {
-								title
-								id
-							}
-							}
-						"""
-				
-				# print("========searchhhh====")
+		res = requests.post(ENDPOINT, headers=HEADERS, json={'query': search_query, 'variables': {'keyword': audio_title}})
+		# print(res.json(), "========search transcripts response========")
+		
+		if res.status_code != 200:
+			frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Failed to Fetch Transcript")
+			frappe.log_error(title="Fireflies API Error: {0}".format(res.text), message="Failed to search transcripts for {0}".format(audio_title))
 
-				res = requests.post(ENDPOINT, headers=HEADERS, json={'query': search_query, 'variables': {'keyword': audio_title}})
-				# print(res.json(), "========search transcripts response========")
-				
-				if res.status_code != 200:
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Failed to Fetch Transcript")
-					frappe.log_error(title="Fireflies API Error: {0}".format(res.text), message="Failed to search transcripts for {0}".format(audio_title))
-					continue
+		transcripts_found = res.json().get("data", {}).get("transcripts", [])
+		# print(transcripts_found, "========transcripts_found=======")
 
-				transcripts_found = res.json().get("data", {}).get("transcripts", [])
-				# print(transcripts_found, "========transcripts_found=======")
-
-				if not transcripts_found:
-					frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Transcript Not Found")
-					continue
-				else:
-					for transcript in transcripts_found:
-						if transcript.get("title") == audio_title:
-							# print("========title match=====", transcript)
-							transcript_id = transcript.get("id")
-							content_query = """
-								query Transcript($id: String!) {
-									transcript(id: $id) {
-										sentences {
-											speaker_id
-											text
-										}
-									}
+		if not transcripts_found:
+			frappe.msgprint("Transcript is still processing. Try again after few minutes", alert=True)
+		else:
+			for transcript in transcripts_found:
+				if transcript.get("title") == audio_title:
+					# print("========title match=====", transcript)
+					transcript_id = transcript.get("id")
+					content_query = """
+						query Transcript($id: String!) {
+							transcript(id: $id) {
+								sentences {
+									speaker_id
+									text
 								}
-								"""
+							}
+						}
+						"""
 
-							content_res = requests.post(ENDPOINT , headers=HEADERS, json={'query': content_query, 'variables': {'id': transcript_id}})
-							if content_res.status_code != 200:
-								frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Failed to Fetch Transcript")
-								frappe.log_error(title="Fireflies API Error: {0}".format(content_res.text), message="Failed to fetch transcript content for {0}".format(audio_title))
-								continue
+					content_res = requests.post(ENDPOINT , headers=HEADERS, json={'query': content_query, 'variables': {'id': transcript_id}})
+					if content_res.status_code != 200:
+						frappe.db.set_value("Evaluate Candidate Details CT", docname, "transcript_status", "Failed to Fetch Transcript")
+						frappe.log_error(title="Fireflies API Error: {0}".format(content_res.text), message="Failed to fetch transcript content for {0}".format(audio_title))
+						continue
 
-							# print(content_res, "========final transcript response========")
-							sentences = content_res.json().get("data", {}).get("transcript", {}).get("sentences", [])
-							full_transcript = ""
-							for s in sentences:
-								speaker_name = "Speaker {0}".format(s.get("speaker_id"))
-								
-								full_transcript += "{0} : {1}\n".format(speaker_name, s.get("text"))
+					# print(content_res, "========final transcript response========")
+					sentences = content_res.json().get("data", {}).get("transcript", {}).get("sentences", [])
+					full_transcript = ""
+					for s in sentences:
+						speaker_name = "Speaker {0}".format(s.get("speaker_id"))
+						
+						full_transcript += "{0} : {1}\n".format(speaker_name, s.get("text"))
+			
+					frappe.db.set_value("Evaluate Candidate Details CT", docname, {
+							"transcript_id": transcript_id,
+							"transcript": full_transcript,
+							"transcript_status": "Completed"
+					})
+					frappe.msgprint("Transcript fetched successfully.", alert=True)
+					break
+
+		parent_doc = frappe.get_doc(evaluate_doc.parenttype, evaluate_doc.parent)
+		parent_doc.flags.ignore_mandatory = True
+		parent_doc.save(ignore_permissions=True)
+		parent_doc.reload()
+
+		# frappe.db.commit() # Ensure changes are saved before the next API call
 					
-							frappe.db.set_value("Evaluate Candidate Details CT", docname, {
-									"transcript_id": transcript_id,
-									"transcript": full_transcript,
-									"transcript_status": "Completed"
-							})
-							break
 
-				parent_doc = frappe.get_doc(evaluate_doc.parenttype, evaluate_doc.parent)
-				parent_doc.flags.ignore_mandatory = True
-				parent_doc.save(ignore_permissions=True)
-				parent_doc.reload()
-
-				# frappe.db.commit() # Ensure changes are saved before the next API call
-							
-
-			except Exception:
-				error = frappe.get_traceback()
-				frappe.log_error(title="Fireflies Transcript Fetch Error", message=error)
-				continue
+	except Exception:
+		error = frappe.get_traceback()
+		frappe.log_error(title="Fireflies Transcript Fetch Error", message=error)
 
 	return "Process completed."
 
@@ -219,3 +196,8 @@ def create_private_file_copy(file_name):
 	new_doc.content=file_doc.get_content()
 	new_doc.save()
 	return new_doc.name, new_doc.file_url
+
+
+def delete_public_file_copy(public_file_name):
+	if frappe.db.exists("File", public_file_name):
+		frappe.delete_doc("File", public_file_name)  # Clean up the public copy after upload

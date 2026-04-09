@@ -103,22 +103,42 @@ frappe.ui.form.on("Evaluate Candidate Details CT", {
             })
         }
     },
-    upload_transcript: function(frm, cdt, cdn){
+    upload_audio_file: function(frm, cdt, cdn){
         let row = locals[cdt][cdn]
         if (row.screening_call_transcript && (row.transcript_status !== "Processing" && row.transcript_status !== "Completed")){
             frappe.call({
-                method: "npro_ai.firefiles.upload_transcription",
+                method: "npro_ai.firefiles.upload_audio_file",
                 args: {
                     "docname": row.name,
                     "audio_url": row.screening_call_transcript
                 },
                 callback: function (r) {
-                    console.log(r.message, "========r.message from upload_transcription========")
+                    console.log(r.message, "========r.message from upload_audio_file========")
                 }
             })
         }
         else{
             frappe.show_alert(__("Please Attach Screening Call Transcript First or Transcript is already processing / completed."), 5);
+        }
+    },
+    get_transcript: function(frm, cdt, cdn){
+        let row = locals[cdt][cdn]
+        if (row.screening_call_transcript && row.transcript_status == "Processing"){
+            frappe.call({
+                method: "npro_ai.firefiles.get_transcript",
+                args: {
+                    "docname": row.name,
+                },
+                callback: function (r) {
+                    console.log(r.message, "========r.message from get_transcript========")
+                }
+            })
+        }
+        else if (row.transcript_status == "Completed"){
+            frappe.show_alert(__("Transcript is already generated."), 5);
+        }
+        else{
+            frappe.show_alert(__("Transcript is not in processing state."), 5);
         }
     },
     print: function(frm, cdt, cdn){

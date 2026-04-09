@@ -173,12 +173,6 @@ after_migrate = "npro_ai.migrate.after_migrate"
 # 	],
 # }
 
-scheduler_events = {
-	"cron": {
-        "*/5 * * * *" : "npro_ai.firefiles.get_transcript"  # Run every 5 minutes
-    }
-}
-
 # Testing
 # -------
 
