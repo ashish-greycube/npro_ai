@@ -128,6 +128,7 @@ frappe.ui.form.on("Evaluate Candidate Details CT", {
                 method: "npro_ai.firefiles.get_transcript",
                 args: {
                     "docname": row.name,
+                    "audio_url": row.screening_call_transcript
                 },
                 callback: function (r) {
                     console.log(r.message, "========r.message from get_transcript========")
@@ -307,7 +308,7 @@ let ask_to_analyse_cv = function (dialog, id) {
 let find_valid_evaluate_candidate_row = function(frm){
     console.log("find_valid_evaluate_candidate_row")
     frm.doc.custom_evaluate_candidate_details.forEach(row => {
-        if ((!row.evaluate_candidate || row.evaluate_candidate == '<div class="ql-editor read-mode"><p><br></p></div>') && row.transcript && row.transcript != '' ){
+        if ((!row.evaluate_candidate || row.evaluate_candidate == '<div class="ql-editor read-mode"><p><br></p></div>')){
             evaluate_candidate_dialog(frm, row)
         }
         else if (row.idx == frm.doc.custom_evaluate_candidate_details.length && (row.evaluate_candidate || row.evaluate_candidate != '<div class="ql-editor read-mode"><p><br></p></div>') ){
@@ -359,7 +360,7 @@ let evaluate_candidate_dialog = function(frm, row){
                             click: function () {
                                 getLLMResponseUI(id);
                                 dialog.get_primary_btn().prop("disabled", true);
-                                ask_to_evaluate_candidate(dialog, id, row.transcript)
+                                ask_to_evaluate_candidate(dialog, id, row.transcript, row.screening_call_transcript)
                             }
                         },
                         {
@@ -424,7 +425,7 @@ let evaluate_candidate_dialog = function(frm, row){
     }
 }
 
-let ask_to_evaluate_candidate = function (dialog, id, transcript_text) {
+let ask_to_evaluate_candidate = function (dialog, id, transcript_text, screening_call_transcript) {
     const d = dialog.get_values();
     const ui = getUIElements(id);
 
@@ -436,7 +437,8 @@ let ask_to_evaluate_candidate = function (dialog, id, transcript_text) {
     frappe.call({
         method: "npro_ai.api.evaluate_cv",
         args: {
-            transcript: transcript_text,
+            screening_call_transcript: screening_call_transcript,
+            transcript: transcript_text || "",
             evaluate_candidate_prompt: d.evaluate_candidate_prompt || "",
             additional_instructions: d.additional_instructions || "",
             session_id: frm.doc.custom_session_id || undefined,

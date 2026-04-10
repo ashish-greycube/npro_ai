@@ -13,6 +13,10 @@ HEADERS = {"Authorization": f"Bearer {FIREFLIES_API_KEY}", "Content-Type": "appl
 
 @frappe.whitelist()
 def upload_audio_file(docname, audio_url):
+		if not audio_url.lower().endswith((".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
+			frappe.throw("Unsupported file format. Please upload an audio file (mp3, mp4, wav, m4a, ogg).")
+			return {"error": "Unsupported file format."}
+
 		# check if file is public or private:
 		file_doc = frappe.get_doc("File", {"file_url": audio_url})
 
@@ -106,7 +110,11 @@ def upload_audio_file(docname, audio_url):
 					return {"error": str(e)}
 
 @frappe.whitelist()
-def get_transcript(docname):
+def get_transcript(docname, audio_url):
+	if not audio_url.lower().endswith((".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
+		frappe.throw("Unsupported file format. Please upload an audio file (mp3, mp4, wav, m4a, ogg).")
+		return {"error": "Unsupported file format."}
+	
 	evaluate_doc = frappe.get_doc("Evaluate Candidate Details CT", docname)
 	audio_title = evaluate_doc.file_title
 	# audio_title = "Transcript for {0}".format("testing narendrakumar.mp3")  # For Testing only

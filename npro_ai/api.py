@@ -381,12 +381,18 @@ def fill_cv_analysation(docname, session_id, ai_response):
 	return "Analyse CV Generated"
 	
 @frappe.whitelist()
-def evaluate_cv(transcript, evaluate_candidate_prompt, additional_instructions, session_id):
+def evaluate_cv(screening_call_transcript, transcript, evaluate_candidate_prompt, additional_instructions, session_id):
 	if not session_id:
 		return {"error": "Analyse Candidate CV First to Evaluate CV."}
 	
-	# if not screening_call_transcript.lower().endswith(".pdf"):
-	# 	return {"error": "LLM Only Supports PDF Files"}
+	if screening_call_transcript.lower().endswith((".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
+		if not transcript or transcript == "":
+			return {"error": "Transcript is required to evaluate candidate based on audio transcript."}
+	elif not screening_call_transcript.lower().endswith(".pdf"):
+		return {"error": "LLM Only Supports PDF Files for Screening Call Attachment."}
+	else:
+		pass
+	
 
 	session = otto.load(session_id)
 	model = otto.get_model(size="Small", provider=ai_provider)
@@ -395,10 +401,10 @@ def evaluate_cv(transcript, evaluate_candidate_prompt, additional_instructions, 
 
 	ai_prompt = evaluate_candidate_prompt + "\n" + additional_instructions + "\n" + "Transcript Text: \n {0}".format(transcript) + "\n\n" + " and do not give extra details which are not asked.(Refer Previously Attached CV)." + respose_format + "Give output in HTML Format."
 
-
-	stream = session.interact(ai_prompt, stream=True)
-	
-	# stream = session.interact([content.file(screening_call_transcript, name="cv_file.pdf") ,ai_prompt], stream=True)
+	if transcript and transcript != "":
+		stream = session.interact(ai_prompt, stream=True)
+	else:
+		stream = session.interact([content.file(screening_call_transcript, name="cv_file.pdf") ,ai_prompt], stream=True)
 
 	try:
 		for chunk in stream:
@@ -509,6 +515,6 @@ def parse_json_string(raw_str):
 
 @frappe.whitelist()
 def check_screening_call_audio_file_format(file):
-	if not file.lower().endswith((".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
-		frappe.msgprint(_("Only Audio Files are allowed for Screening Call. <br> <b>Valid formats are - .mp3, .mp4, .wav, .m4a, .ogg</b>"))
+	if not file.lower().endswith((".pdf", ".mp3", ".mp4", ".wav", ".m4a", ".ogg")):
+		frappe.msgprint(_("Only Pdf/Audio Files are allowed for Screening Call. <br> <b>Valid formats are - .pdf, .mp3, .mp4, .wav, .m4a, .ogg</b>"))
 		return True
